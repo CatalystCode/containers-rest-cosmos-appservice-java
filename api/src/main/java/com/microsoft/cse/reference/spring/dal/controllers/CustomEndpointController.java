@@ -8,8 +8,6 @@ import com.microsoft.cse.reference.spring.dal.models.Title;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import org.bson.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -37,8 +35,6 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.proj
  */
 @RestController
 public class CustomEndpointController {
-
-    Logger logger = LoggerFactory.getLogger(CustomEndpointController.class);
 
     private IntegerToBoolean integerToBoolean = new IntegerToBoolean();
     private EmptyStringToNull emptyStringToNull = new EmptyStringToNull();
@@ -78,8 +74,8 @@ public class CustomEndpointController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/people/{nconst}/titles")
     public List<Title> getAllTitles(@PathVariable String nconst) {
-        final Span span = tracer.buildSpan("get-person-titles").start();
-        span.log(ImmutableMap.of("event", "query-person-titles", "value", nconst));
+        final Span span = tracer.buildSpan("get-titles-from-person").start();
+        span.log(ImmutableMap.of("event", "get-titles-from-person", "value", nconst));
 
         MatchOperation filterByNconst = match(Criteria.where("nconst").is(nconst));
 
