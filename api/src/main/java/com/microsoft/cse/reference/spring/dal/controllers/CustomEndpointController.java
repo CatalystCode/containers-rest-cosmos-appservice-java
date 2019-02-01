@@ -5,7 +5,10 @@ import com.microsoft.cse.reference.spring.dal.converters.IntegerToBoolean;
 import com.microsoft.cse.reference.spring.dal.converters.EmptyStringToNull;
 import com.microsoft.cse.reference.spring.dal.models.PrincipalWithName;
 import com.microsoft.cse.reference.spring.dal.models.Title;
+import io.jaegertracing.Configuration;
 import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
@@ -30,15 +33,15 @@ import com.google.common.collect.ImmutableMap;
 @RestController
 public class CustomEndpointController {
 
-    @Autowired
-    private final Tracer tracer;
+    Logger logger = LoggerFactory.getLogger(CustomEndpointController.class);
 
     private IntegerToBoolean integerToBoolean = new IntegerToBoolean();
     private EmptyStringToNull emptyStringToNull = new EmptyStringToNull();
     private MongoTemplate mongoTemplate;
+    private Tracer tracer;
 
     @Autowired
-    public CustomEndpointController(final MongoTemplate mongoTemplate, final Tracer tracer) {
+    public CustomEndpointController(MongoTemplate mongoTemplate, Tracer tracer) {
         this.mongoTemplate = mongoTemplate;
         this.tracer = tracer;
     }
@@ -70,28 +73,19 @@ public class CustomEndpointController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/people/{nconst}/titles")
     public List<Title> getAllTitles(@PathVariable String nconst) {
+
+//        logger.info("**start** getAllTitles " + Configuration.ReporterConfiguration.fromEnv().getSenderConfiguration().getAgentHost());
+
+        logger.info("**start** getAllTitles - " + nconst);
+
+        tracer.buildSpan("get-person-titles").start();
         final Span span = tracer.buildSpan("get-person-titles").start();
         span.log(ImmutableMap.of("event", "query-person-titles", "value", nconst));
 
-        MatchOperation filterByNconst = match(Criteria.where("nconst").is(nconst));
-
-        LookupOperation titleLookup = LookupOperation.newLookup()
-                .from("titles")
-                .localField("tconst")
-                .foreignField("tconst")
-                .as("title_info");
-
-        Aggregation aggregation = Aggregation.newAggregation(
-                filterByNconst,
-                titleLookup,
-                project("title_info")
-        );
-
-        AggregationResults<Document> aggregationResults = mongoTemplate.aggregate(aggregation, "principals_mapping", Document.class);
-
         span.finish();
+        logger.info("**finish** getAllTitles" + nconst);
 
-        return documentToTitleList(aggregationResults);
+        return null;
     }
 
 
