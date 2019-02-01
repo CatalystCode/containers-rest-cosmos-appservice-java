@@ -1,11 +1,12 @@
 package com.microsoft.cse.reference.spring.dal.controllers;
 
-import com.microsoft.cse.reference.spring.dal.JaegerTracerHelper;
+import com.microsoft.cse.reference.spring.dal.config.TracerConfig;
 import com.microsoft.cse.reference.spring.dal.converters.IntegerToBoolean;
 import com.microsoft.cse.reference.spring.dal.converters.EmptyStringToNull;
 import com.microsoft.cse.reference.spring.dal.models.PrincipalWithName;
 import com.microsoft.cse.reference.spring.dal.models.Title;
 import org.bson.Document;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -28,14 +29,18 @@ import com.google.common.collect.ImmutableMap;
  */
 @RestController
 public class CustomEndpointController {
+
+    @Autowired
+    private final Tracer tracer;
+
     private IntegerToBoolean integerToBoolean = new IntegerToBoolean();
     private EmptyStringToNull emptyStringToNull = new EmptyStringToNull();
     private MongoTemplate mongoTemplate;
-    private final Tracer tracer;
 
-    public CustomEndpointController(MongoTemplate mongoTemplate) {
+    @Autowired
+    public CustomEndpointController(final MongoTemplate mongoTemplate, final Tracer tracer) {
         this.mongoTemplate = mongoTemplate;
-        this.tracer = JaegerTracerHelper.initTracer("custom-endpoint-controller");
+        this.tracer = tracer;
     }
 
     /**
@@ -65,7 +70,7 @@ public class CustomEndpointController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/people/{nconst}/titles")
     public List<Title> getAllTitles(@PathVariable String nconst) {
-        Span span = tracer.buildSpan("get-person-titles").start();
+        final Span span = tracer.buildSpan("get-person-titles").start();
         span.log(ImmutableMap.of("event", "query-person-titles", "value", nconst));
 
         MatchOperation filterByNconst = match(Criteria.where("nconst").is(nconst));
@@ -99,7 +104,7 @@ public class CustomEndpointController {
      */
     @RequestMapping(method = RequestMethod.GET, value = "/titles/{tconst}/people")
     public List<PrincipalWithName> getAllPeople(@PathVariable String tconst) {
-        Span span = tracer.buildSpan("get-people-from-title").start();
+        final Span span = tracer.buildSpan("get-people-from-title").start();
         span.log(ImmutableMap.of("event", "query-people-from-title", "value", tconst));
 
         MatchOperation filterByNconst = match(Criteria.where("tconst").is(tconst));
